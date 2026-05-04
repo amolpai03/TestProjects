@@ -1,41 +1,27 @@
-# ── LINEAR PROGRAMMING ──
-# Using scipy.optimize.linprog
-from scipy.optimize import linprog
+# Install first
+# pip install pulp
 
-# Problem:
-# Maximize: 5A + 4B (profit)
-# Subject to:
-#   6A + 4B <= 24  (machine hours)
-#   1A + 2B <= 6   (labor hours)
-#   A, B >= 0
+from pulp import *
 
-# NOTE: linprog MINIMIZES by default
-# So negate the objective to maximize
-objective = [-5, -4]  # negated for maximization
+# Create problem
+prob = LpProblem("Maximize_Profit", LpMaximize)
 
-# Constraint matrix (left hand side)
-constraints = [
-    [6, 4],   # machine hours
-    [1, 2]    # labor hours
-]
+# Decision variables
+A = LpVariable("Product_A", lowBound=0)
+B = LpVariable("Product_B", lowBound=0)
 
-# Right hand side
-rhs = [24, 6]
+# Objective function (maximize)
+prob += 5*A + 4*B
 
-# Bounds for variables (>= 0)
-bounds = [(0, None), (0, None)]
+# Constraints
+prob += 6*A + 4*B <= 24   # machine hours
+prob += 1*A + 2*B <= 6    # labor hours
 
 # Solve
-result = linprog(
-    c=objective,
-    A_ub=constraints,
-    b_ub=rhs,
-    bounds=bounds,
-    method='highs'
-)
+prob.solve(PULP_CBC_CMD(msg=0))
 
 # Results
-print(f"Status:           {result.message}")
-print(f"Max Profit:       ${-result.fun:.2f}")  # negate back
-print(f"Units Product A:  {result.x[0]:.2f}")
-print(f"Units Product B:  {result.x[1]:.2f}")
+print(f"Status:          {LpStatus[prob.status]}")
+print(f"Max Profit:      ${value(prob.objective):.2f}")
+print(f"Units Product A: {value(A):.2f}")
+print(f"Units Product B: {value(B):.2f}")

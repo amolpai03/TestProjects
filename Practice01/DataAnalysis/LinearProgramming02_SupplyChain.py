@@ -1,41 +1,33 @@
-# ── REAL SUPPLY CHAIN EXAMPLE ──
+# ── REAL SUPPLY CHAIN EXAMPLE USING PuLP ──
 # Minimize procurement cost across 3 suppliers
 # meeting demand of 1000 units
 
-from scipy.optimize import linprog
+from pulp import *
 
-# Cost per unit from each supplier
-# Supplier A: $10, B: $12, C: $9
-costs = [10, 12, 9]
+# Create problem
+prob = LpProblem("Minimize_Procurement_Cost", LpMinimize)
 
-# Constraints:
-# 1. Total supply must meet demand: A + B + C >= 1000
-# 2. Supplier A max capacity: A <= 400
-# 3. Supplier B max capacity: B <= 500
-# 4. Supplier C max capacity: C <= 300
+# Decision variables — units to order from each supplier
+A = LpVariable("Supplier_A", lowBound=0)
+B = LpVariable("Supplier_B", lowBound=0)
+C = LpVariable("Supplier_C", lowBound=0)
 
-# For >= constraint negate it
-constraints_ub = [
-    [-1, -1, -1],  # -(A+B+C) <= -1000 (demand)
-    [1,  0,  0],   # A <= 400
-    [0,  1,  0],   # B <= 500
-    [0,  0,  1],   # C <= 300
-]
+# Objective function — minimize total cost
+prob += 10*A + 12*B + 9*C
 
-rhs = [-1000, 400, 500, 300]
+# Constraints
+prob += A + B + C >= 1000   # must meet total demand
+prob += A <= 400             # Supplier A max capacity
+prob += B <= 500             # Supplier B max capacity
+prob += C <= 300             # Supplier C max capacity
 
-bounds = [(0, None), (0, None), (0, None)]
+# Solve
+prob.solve(PULP_CBC_CMD(msg=0))
 
-result = linprog(
-    c=costs,
-    A_ub=constraints_ub,
-    b_ub=rhs,
-    bounds=bounds,
-    method='highs'
-)
-
-print(f"Minimum Cost:     ${result.fun:.2f}")
-print(f"Order from A:     {result.x[0]:.0f} units")
-print(f"Order from B:     {result.x[1]:.0f} units")
-print(f"Order from C:     {result.x[2]:.0f} units")
-print(f"Total units:      {sum(result.x):.0f} units")
+# Results
+print(f"Status:        {LpStatus[prob.status]}")
+print(f"Minimum Cost:  ${value(prob.objective):,.2f}")
+print(f"Order from A:  {value(A):.0f} units @ $10/unit")
+print(f"Order from B:  {value(B):.0f} units @ $12/unit")
+print(f"Order from C:  {value(C):.0f} units @ $9/unit")
+print(f"Total units:   {value(A) + value(B) + value(C):.0f} units")
