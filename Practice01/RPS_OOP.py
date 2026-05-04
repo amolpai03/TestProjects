@@ -59,6 +59,7 @@ class Game:
 
         self.game_number = 1
         while self.game_number <= self.number_of_games:
+            print(f"Game number: {self.game_number} of {self.number_of_games}")
             self.player.make_choice()
             self.computer.make_choice()
             self.check_winner()
